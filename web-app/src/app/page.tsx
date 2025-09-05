@@ -189,7 +189,7 @@ export default function Home() {
                 <Button className="cursor-pointer w-full sm:w-auto" onClick={predict} disabled={!net}>Predict</Button>
               </div>
 
-              <p className="mt-3 text-center text-sm text-muted-foreground min-h-5">{result && <>I think it's a <span className="font-semibold">{result}</span></>}</p>
+              <p className="mt-3 text-center text-sm text-muted-foreground min-h-5">{result && <>I think it&apos;s a <span className="font-semibold">{result}</span></>}</p>
             </div>
           </div>
         </CardContent>
