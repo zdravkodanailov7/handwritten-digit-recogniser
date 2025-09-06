@@ -229,16 +229,17 @@ export default function Home() {
       setLastIndex(null);
     };
 
+    // Start on element, but move/end on window to keep tracking outside bounds
     el.addEventListener('touchstart', onTouchStart, { passive: false });
-    el.addEventListener('touchmove', onTouchMove, { passive: false });
-    el.addEventListener('touchend', onTouchEndOrCancel, { passive: false });
-    el.addEventListener('touchcancel', onTouchEndOrCancel, { passive: false });
+    window.addEventListener('touchmove', onTouchMove, { passive: false });
+    window.addEventListener('touchend', onTouchEndOrCancel, { passive: false });
+    window.addEventListener('touchcancel', onTouchEndOrCancel, { passive: false });
 
     return () => {
       el.removeEventListener('touchstart', onTouchStart as EventListener);
-      el.removeEventListener('touchmove', onTouchMove as EventListener);
-      el.removeEventListener('touchend', onTouchEndOrCancel as EventListener);
-      el.removeEventListener('touchcancel', onTouchEndOrCancel as EventListener);
+      window.removeEventListener('touchmove', onTouchMove as EventListener);
+      window.removeEventListener('touchend', onTouchEndOrCancel as EventListener);
+      window.removeEventListener('touchcancel', onTouchEndOrCancel as EventListener);
     };
   }, []);
 
@@ -264,14 +265,26 @@ export default function Home() {
                 {pixels.map((v, idx) => (
                   <div
                     key={idx}
-                    style={{ backgroundColor: `rgb(${v * 255}, ${v * 255}, ${v * 255})` }}
+                    style={{ backgroundColor: `rgb(${v * 255}, ${v * 255}, ${v * 255})`, pointerEvents: 'none' }}
                   />
                 ))}
               </div>
 
               <div className="mt-4 flex w-full flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-center">
-                <Button className="cursor-pointer w-full sm:w-auto" variant="outline" onClick={clearCanvas}>Clear</Button>
-                <Button className="cursor-pointer w-full sm:w-auto" onClick={predict} disabled={!net}>Predict</Button>
+                <Button
+                  className="cursor-pointer w-full sm:w-auto transition-transform duration-150 ease-out hover:scale-[1.02] active:scale-95 hover:shadow-md"
+                  variant="outline"
+                  onClick={clearCanvas}
+                >
+                  Clear
+                </Button>
+                <Button
+                  className="cursor-pointer w-full sm:w-auto transition-transform duration-150 ease-out hover:scale-[1.02] active:scale-95 hover:shadow-md"
+                  onClick={predict}
+                  disabled={!net}
+                >
+                  Predict
+                </Button>
               </div>
 
               <p className="mt-3 text-center text-sm text-muted-foreground min-h-5">{result && <>I think it&apos;s a <span className="font-semibold">{result}</span></>}</p>
