@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { DotPattern } from "../components/magicui/dot-pattern";
 import { cn } from "../lib/utils";
+import { Analytics } from "@vercel/analytics/next"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://handwritten-digit-recogniser.vercel.app"),
   title: {
     default: "Handwritten Digit Recogniser",
     template: "%s • Handwritten Digit Recogniser",
@@ -88,6 +89,7 @@ export default function RootLayout({
             {children}
           </div>
         </div>
+        <Analytics />
       </body>
     </html>
   );
