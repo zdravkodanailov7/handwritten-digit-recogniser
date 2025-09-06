@@ -12,6 +12,10 @@ export default function Home() {
   const [pixels, setPixels] = useState<number[]>(() => new Array(28 * 28).fill(0));
   const [isDrawing, setIsDrawing] = useState<boolean>(false);
   const [lastIndex, setLastIndex] = useState<number | null>(null);
+  const isDrawingRef = useRef<boolean>(false);
+  const lastIndexRef = useRef<number | null>(null);
+  const usingTouchRef = useRef<boolean>(false);
+  const paintStrokeRef = useRef<typeof paintStroke | null>(null);
 
   const BRUSH_RADIUS = 2; // cells
   const BRUSH_SIGMA = 0.75; // falloff
@@ -57,6 +61,11 @@ export default function Home() {
       return next;
     });
   };
+
+  // Keep a stable reference for native listeners
+  useEffect(() => {
+    paintStrokeRef.current = paintStroke;
+  }, [paintStroke]);
 
   // Produce a slightly zoomed-out, centred 28x28 version of the drawn pixels
   const preprocess = (src: number[]): number[] => {
@@ -129,13 +138,28 @@ export default function Home() {
     return row * 28 + col;
   };
 
+  const getIndexFromClientXY = (clientX: number, clientY: number): number | null => {
+    const grid = gridRef.current;
+    if (!grid) return null;
+    const rect = grid.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
+    if (x < 0 || y < 0 || x >= rect.width || y >= rect.height) return null;
+    const col = Math.min(27, Math.max(0, Math.floor((x / rect.width) * 28)));
+    const row = Math.min(27, Math.max(0, Math.floor((y / rect.height) * 28)));
+    return row * 28 + col;
+  };
+
   const onPointerDownGrid = (e: React.PointerEvent) => {
     e.preventDefault();
     console.log('Pointer down:', e.pointerType);  // Debug: Check if 'touch' or 'mouse'
+    if (usingTouchRef.current && e.pointerType === 'touch') return;
     const idx = getIndexFromEvent(e);
     if (idx == null) return;
     setIsDrawing(true);
     setLastIndex(idx);
+    isDrawingRef.current = true;
+    lastIndexRef.current = idx;
     if (gridRef.current) {
       gridRef.current.setPointerCapture(e.pointerId);
     }
@@ -146,20 +170,77 @@ export default function Home() {
     if (!isDrawing) return;
     e.preventDefault();
     console.log('Pointer move:', e.pointerType);  // Debug
+    if (usingTouchRef.current && e.pointerType === 'touch') return;
     const idx = getIndexFromEvent(e);
     if (idx == null) return;
     paintStroke(lastIndex, idx);
     setLastIndex(idx);
+    lastIndexRef.current = idx;
   };
 
   const onPointerUpGrid = (e: React.PointerEvent) => {
     setIsDrawing(false);
     setLastIndex(null);
     console.log('Pointer up');  // Debug
+    isDrawingRef.current = false;
+    lastIndexRef.current = null;
     if (gridRef.current) {
       gridRef.current.releasePointerCapture(e.pointerId);
     }
   };
+
+  // Native touch handlers with passive: false to ensure preventDefault works on iOS Safari
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el) return;
+
+    const onTouchStart = (ev: TouchEvent) => {
+      usingTouchRef.current = true;
+      if (ev.touches.length === 0) return;
+      ev.preventDefault();
+      const t = ev.touches[0];
+      const idx = getIndexFromClientXY(t.clientX, t.clientY);
+      if (idx == null) return;
+      isDrawingRef.current = true;
+      lastIndexRef.current = idx;
+      setIsDrawing(true);
+      setLastIndex(idx);
+      if (paintStrokeRef.current) paintStrokeRef.current(null, idx);
+    };
+
+    const onTouchMove = (ev: TouchEvent) => {
+      if (!isDrawingRef.current) return;
+      ev.preventDefault();
+      const t = ev.touches[0] || ev.changedTouches[0];
+      if (!t) return;
+      const idx = getIndexFromClientXY(t.clientX, t.clientY);
+      if (idx == null) return;
+      if (paintStrokeRef.current) paintStrokeRef.current(lastIndexRef.current, idx);
+      lastIndexRef.current = idx;
+      setLastIndex(idx);
+    };
+
+    const onTouchEndOrCancel = (ev: TouchEvent) => {
+      if (!isDrawingRef.current) return;
+      ev.preventDefault();
+      isDrawingRef.current = false;
+      lastIndexRef.current = null;
+      setIsDrawing(false);
+      setLastIndex(null);
+    };
+
+    el.addEventListener('touchstart', onTouchStart, { passive: false });
+    el.addEventListener('touchmove', onTouchMove, { passive: false });
+    el.addEventListener('touchend', onTouchEndOrCancel, { passive: false });
+    el.addEventListener('touchcancel', onTouchEndOrCancel, { passive: false });
+
+    return () => {
+      el.removeEventListener('touchstart', onTouchStart as EventListener);
+      el.removeEventListener('touchmove', onTouchMove as EventListener);
+      el.removeEventListener('touchend', onTouchEndOrCancel as EventListener);
+      el.removeEventListener('touchcancel', onTouchEndOrCancel as EventListener);
+    };
+  }, []);
 
   return (
     <main className="min-h-dvh w-full flex items-center justify-center p-4 sm:p-6">
