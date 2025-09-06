@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Button } from '../components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { loadNetwork, Network } from './lib/network';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { loadNetwork, Network } from '@/app/lib/network';
 
 export default function Home() {
   const gridRef = useRef<HTMLDivElement>(null);
@@ -131,31 +131,34 @@ export default function Home() {
 
   const onPointerDownGrid = (e: React.PointerEvent) => {
     e.preventDefault();
+    console.log('Pointer down:', e.pointerType);  // Debug: Check if 'touch' or 'mouse'
     const idx = getIndexFromEvent(e);
     if (idx == null) return;
     setIsDrawing(true);
     setLastIndex(idx);
-    try {
-      gridRef.current?.setPointerCapture(e.pointerId);
-    } catch {}
+    if (gridRef.current) {
+      gridRef.current.setPointerCapture(e.pointerId);
+    }
     paintStroke(null, idx);
   };
 
   const onPointerMoveGrid = (e: React.PointerEvent) => {
     if (!isDrawing) return;
     e.preventDefault();
+    console.log('Pointer move:', e.pointerType);  // Debug
     const idx = getIndexFromEvent(e);
     if (idx == null) return;
     paintStroke(lastIndex, idx);
     setLastIndex(idx);
   };
 
-  const onPointerUpGrid = (e?: React.PointerEvent) => {
+  const onPointerUpGrid = (e: React.PointerEvent) => {
     setIsDrawing(false);
     setLastIndex(null);
-    try {
-      if (e) gridRef.current?.releasePointerCapture(e.pointerId);
-    } catch {}
+    console.log('Pointer up');  // Debug
+    if (gridRef.current) {
+      gridRef.current.releasePointerCapture(e.pointerId);
+    }
   };
 
   return (
@@ -173,8 +176,9 @@ export default function Home() {
                 onPointerMove={onPointerMoveGrid}
                 onPointerUp={onPointerUpGrid}
                 onPointerLeave={onPointerUpGrid}
+                onPointerCancel={onPointerUpGrid}  // Add for touch cancel
                 className="border border-border touch-none cursor-crosshair select-none rounded-md shadow-xs"
-                style={{ width: 'min(88vw, 320px)', height: 'min(88vw, 320px)', display: 'grid', gridTemplateColumns: 'repeat(28, 1fr)', gridTemplateRows: 'repeat(28, 1fr)', backgroundColor: 'black' }}
+                style={{ touchAction: 'none', width: 'min(88vw, 320px)', height: 'min(88vw, 320px)', display: 'grid', gridTemplateColumns: 'repeat(28, 1fr)', gridTemplateRows: 'repeat(28, 1fr)', backgroundColor: 'black' }}
               >
                 {pixels.map((v, idx) => (
                   <div
