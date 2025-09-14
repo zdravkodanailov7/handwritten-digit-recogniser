@@ -248,6 +248,9 @@ export default function Home() {
       <Card className="w-full max-w-3xl bg-white/10 border-white/10 backdrop-blur-sm shadow-xl">
         <CardHeader>
           <CardTitle className="text-center text-xl sm:text-2xl">Handwritten Digit Recogniser</CardTitle>
+          <p className="text-center text-[10px] sm:text-xs text-muted-foreground mt-1">
+            Draw a large digit so it fills the square for best accuracy.
+          </p>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 gap-6">
